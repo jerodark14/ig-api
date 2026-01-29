@@ -1,9 +1,10 @@
-from fastapi import FastAPI, Query
+from fastapi import FastAPI, Query, Request
 from fastapi.responses import PlainTextResponse
 
 app = FastAPI()
 
-VERIFY_TOKEN = "meu_token_secreto"
+# 🔐 TOKEN SIMPLES DE VERIFICAÇÃO DO WEBHOOK
+VERIFY_TOKEN = "meu_token_webhook_123"
 
 
 @app.get("/")
@@ -11,6 +12,7 @@ def home():
     return {"status": "ok"}
 
 
+# ✅ VERIFICAÇÃO DO WEBHOOK (META / WHATSAPP)
 @app.get("/webhook")
 def verify_webhook(
     hub_mode: str = Query(None, alias="hub.mode"),
@@ -20,4 +22,12 @@ def verify_webhook(
     if hub_mode == "subscribe" and hub_verify_token == VERIFY_TOKEN:
         return PlainTextResponse(hub_challenge)
 
-    return {"error": "Verificação falhou"}
+    return PlainTextResponse("Verificação falhou", status_code=403)
+
+
+# 📩 RECEBER EVENTOS DO WHATSAPP (POST)
+@app.post("/webhook")
+async def receive_webhook(request: Request):
+    data = await request.json()
+    print("📩 Webhook recebido:", data)
+    return {"status": "received"}
